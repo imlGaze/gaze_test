@@ -9,6 +9,7 @@ void RealsenseAPI::initialize()
 	/* RealSenseの初期化 */
 	senseManager = SenseManager::CreateInstance();
 	senseManager->EnableStream(Capture::STREAM_TYPE_IR, 640, 480, 30);
+	senseManager->EnableStream(Capture::STREAM_TYPE_COLOR, 640, 480, 30);
 	senseManager->Init();
 
 	device = senseManager->QueryCaptureManager()->QueryDevice();
@@ -21,19 +22,19 @@ void RealsenseAPI::initialize()
 	
 }
 
-void RealsenseAPI::queryImage(cv::Mat& inputImage)
+void RealsenseAPI::queryImage(cv::Mat& inputImage, ResponseType type)
 {
 ;
 	status = senseManager->AcquireFrame(true);
 	if (status < Status::STATUS_NO_ERROR)
 	{
-		return;
+		return ;
 	}
 	const Capture::Sample *sample = senseManager->QuerySample();
 	//ここIR
 	if (sample)
 	{
-		if (sample->ir)
+		if (type == IR && sample->ir)
 		{
 			Image::ImageData data = {}; //={}構造体の初期化方法;
 			Image::Rotation rotation = sample->ir->QueryRotation();
@@ -46,6 +47,18 @@ void RealsenseAPI::queryImage(cv::Mat& inputImage)
 				sample->ir->ReleaseAccess(&data);
 			}
 		}
+		else if (type == COLOR && sample->color)
+		{
+			Image::ImageData data = {}; //={}構造体の初期化方法;
+			Image::Rotation rotation = sample->color->QueryRotation();
+			status = sample->color->AcquireAccess(Image::ACCESS_READ, Image::PIXEL_FORMAT_RGB24, rotation, Image::OPTION_ANY, &data);
+			if (status >= Status::STATUS_NO_ERROR)
+			{
+				memcpy(inputImage.data, data.planes[0], data.pitches[0] * 480);
+				senseManager->ReleaseFrame();
+				sample->color->ReleaseAccess(&data);
+			}
+		}
 		else
 		{
 			std::cout << "error" << std::endl;
@@ -55,6 +68,5 @@ void RealsenseAPI::queryImage(cv::Mat& inputImage)
 	{
 		std::cout << "sample is nullptr";
 	}
-	
 	
 }

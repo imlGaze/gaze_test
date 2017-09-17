@@ -27,4 +27,15 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <Xml Include="haarcascade_frontalface_default.xml">
+      <Filter>リソース ファイル</Filter>
+    </Xml>
+    <Xml Include="haarcascade_eye.xml">
+      <Filter>リソース ファイル</Filter>
+    </Xml>
+    <Xml Include="haarcascade_frontalface_alt.xml">
+      <Filter>リソース ファイル</Filter>
+    </Xml>
+  </ItemGroup>
 </Project>
