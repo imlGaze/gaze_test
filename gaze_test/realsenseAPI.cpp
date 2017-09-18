@@ -24,40 +24,29 @@ void RealSenseAPI::initialize()
 
 void RealSenseAPI::queryImage(cv::Mat& inputImage, ResponseType type)
 {
-;
 	status = senseManager->AcquireFrame(true);
 	if (status < Status::STATUS_NO_ERROR)
 	{
 		return ;
 	}
+
 	const Capture::Sample *sample = senseManager->QuerySample();
-	//ここIR
 	if (sample)
 	{
-		if (type == IR && sample->ir)
+		Image *img = type == IR ? sample->ir : sample->color;
+		Image::PixelFormat format = type == IR ? Image::PIXEL_FORMAT_Y16 : Image::PIXEL_FORMAT_RGB24;
+
+		Image::ImageData data = {}; //={}構造体の初期化方法;
+		Image::Rotation rotation = img->QueryRotation();
+
+		status = img->AcquireAccess(Image::ACCESS_READ, format, rotation, Image::OPTION_ANY, &data);
+
+		if (status >= Status::STATUS_NO_ERROR)
 		{
-			Image::ImageData data = {}; //={}構造体の初期化方法;
-			Image::Rotation rotation = sample->ir->QueryRotation();
-			status = sample->ir->AcquireAccess(Image::ACCESS_READ, Image::PIXEL_FORMAT_Y16, rotation, Image::OPTION_ANY, &data);
-			if (status >= Status::STATUS_NO_ERROR)
-			{
-				/* ここでsrcImageにカメラ画像をコピー */
-				memcpy(inputImage.data, data.planes[0], data.pitches[0] * 480);
-				senseManager->ReleaseFrame();
-				sample->ir->ReleaseAccess(&data);
-			}
-		}
-		else if (type == COLOR && sample->color)
-		{
-			Image::ImageData data = {}; //={}構造体の初期化方法;
-			Image::Rotation rotation = sample->color->QueryRotation();
-			status = sample->color->AcquireAccess(Image::ACCESS_READ, Image::PIXEL_FORMAT_RGB24, rotation, Image::OPTION_ANY, &data);
-			if (status >= Status::STATUS_NO_ERROR)
-			{
-				memcpy(inputImage.data, data.planes[0], data.pitches[0] * 480);
-				senseManager->ReleaseFrame();
-				sample->color->ReleaseAccess(&data);
-			}
+			/* ここでsrcImageにカメラ画像をコピー */
+			memcpy(inputImage.data, data.planes[0], data.pitches[0] * 480);
+			senseManager->ReleaseFrame();
+			img->ReleaseAccess(&data);
 		}
 		else
 		{

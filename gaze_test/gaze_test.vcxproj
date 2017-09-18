@@ -156,10 +156,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="realsenseAPI.cpp" />
+    <ClCompile Include="RealSenseAPI.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="realsesenseAPI.h" />
+    <ClInclude Include="RealSenseAPI.h" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="haarcascade_eye.xml" />

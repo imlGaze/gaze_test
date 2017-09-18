@@ -18,14 +18,9 @@
     <ClCompile Include="main.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="realsenseAPI.cpp">
+    <ClCompile Include="RealSenseAPI.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="realsesenseAPI.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="haarcascade_frontalface_default.xml">
@@ -37,5 +32,10 @@
     <Xml Include="haarcascade_frontalface_alt.xml">
       <Filter>リソース ファイル</Filter>
     </Xml>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="RealSenseAPI.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
