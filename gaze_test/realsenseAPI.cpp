@@ -1,10 +1,10 @@
-#include"realsesenseAPI.h"
+#include"RealSenseAPI.h"
 #include<opencv2\opencv.hpp>
 #include<iostream>
 
 using namespace Intel::RealSense;
 
-void RealsenseAPI::initialize()
+void RealSenseAPI::initialize()
 {
 	/* RealSense‚Ì‰Šú‰» */
 	senseManager = SenseManager::CreateInstance();
@@ -22,7 +22,7 @@ void RealsenseAPI::initialize()
 	
 }
 
-void RealsenseAPI::queryImage(cv::Mat& inputImage, ResponseType type)
+void RealSenseAPI::queryImage(cv::Mat& inputImage, ResponseType type)
 {
 ;
 	status = senseManager->AcquireFrame(true);

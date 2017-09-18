@@ -10,12 +10,12 @@ enum ResponseType {
 	NONE,
 };
 
-class RealsenseAPI
+class RealSenseAPI
 {
 public:
 	void initialize();
 	void queryImage(cv::Mat& inputIMage, ResponseType type);
-	~RealsenseAPI() {
+	~RealSenseAPI() {
 		senseManager->Release();
 	};
 

@@ -2,7 +2,7 @@
 #include<RealSense\SenseManager.h>
 #include<iostream>
 #include<opencv2\opencv.hpp>
-#include"realsesenseAPI.h"
+#include"RealSenseAPI.h"
 #include<vector>
 
 using namespace cv;
@@ -21,7 +21,7 @@ int main()
 	CascadeClassifier casc_face("haarcascade_frontalface_alt.xml");
 	CascadeClassifier casc_eye("haarcascade_eye.xml");
 
-	RealsenseAPI realsense;
+	RealSenseAPI realsense;
 	realsense.initialize();
 												 /* ウインドウを作成 */
 
