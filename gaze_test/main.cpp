@@ -79,10 +79,7 @@ int main()
 		LUT(colorImage8UG, gamma2, colorImage8UG);
 		// imwrite("post.png", colorImage8UG);
 
-		Rect l(0, 0, 320, 480);
-		Rect r(320, 0, 320, 480);
-		casc_leye.detectMultiScale(colorImage8UG(l), leyes);
-		casc_reye.detectMultiScale(colorImage8UG(r), reyes);
+		casc_leye.detectMultiScale(colorImage8UG, leyes);
 
 		std::cout << "(" << leyes.size() << ',' << reyes.size() << ')';
 		int leyeIndex = -1, reyeIndex = -1;
@@ -94,21 +91,29 @@ int main()
 				leyeMaxArea = area;
 			}
 		}
-		for (int i = 0, n = reyes.size(); i < n; i++) {
-			int area = reyes[i].width * reyes[i].height;
-			if (reyeMaxArea < area) {
-				reyeIndex = i;
-				reyeMaxArea = area;
-			}
-		}
 
-
-		line(colorImage8UG, Point(320, 0), Point(320, 480), Scalar(255, 255, 255), 2);
-		if (leyeIndex != -1 && reyeIndex != -1) {
+		if (leyeIndex != -1) {
 			Rect leye = leyes[leyeIndex];
-			Rect reye = reyes[reyeIndex] + Point(320, 0);
+			casc_reye.detectMultiScale(colorImage8UG(Rect(0, 0, leye.x, 480)), reyes);
+			
+			for (int i = 0, n = reyes.size(); i < n; i++) {
+				if (reyes[i].x + reyes[i].width < leye.x) {
+					int area = reyes[i].width * reyes[i].height;
+					if (reyeMaxArea < area) {
+						reyeIndex = i;
+						reyeMaxArea = area;
+					}
+				}
+			}
 
 			rectangle(colorImage8UG, leye, cv::Scalar(255, 128, 0), 2);
+			line(colorImage8UG, Point(leye.x, 0), Point(leye.x, 480), Scalar(255, 255, 255), 2);
+		}
+
+		if (leyeIndex != -1 && reyeIndex != -1) {
+			Rect leye = leyes[leyeIndex];
+			Rect reye = reyes[reyeIndex];
+
 			rectangle(colorImage8UG, reye, cv::Scalar(128, 255, 0), 2);
 			/*
 			// —ÖŠs(Contour)’ŠoARETR_EXTERNAL‚ÅÅ‚àŠO‘¤‚Ì‚ÝACHAIN_APPROX_NONE‚Å‚·‚×‚Ä‚Ì—ÖŠs“_i—ÖŠs‚ð\¬‚·‚é“_j‚ðŠi”[
