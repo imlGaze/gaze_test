@@ -96,13 +96,13 @@ int main()
 
 				// 輪郭(Contour)抽出、RETR_EXTERNALで最も外側のみ、CHAIN_APPROX_NONEですべての輪郭点（輪郭を構成する点）を格納
 				cv::findContours(binImage(eyes[i]), contours, RETR_EXTERNAL, CV_CHAIN_APPROX_NONE); // TODO: Color-IRキャリブレーション
-				for (int i = 0, n = contours.size(); i < n; i++)
+				for (int j = 0, n = contours.size(); j < n; j++)
 				{
-					if (cv::contourArea(contours[i])>maxArea || cv::contourArea(contours[i])<minArea) // 輪郭サイズフィルタ（仮）
+					if (cv::contourArea(contours[j])>maxArea || cv::contourArea(contours[j])<minArea) // 輪郭サイズフィルタ（仮）
 					{
 						continue;
 					}
-					Moments moment = cv::moments(contours[i]); // 輪郭重心フィルタ（仮）
+					Moments moment = cv::moments(contours[j]); // 輪郭重心フィルタ（仮）
 					Point point = Point(moment.m10 / moment.m00, moment.m01 / moment.m00);
 					if (point.x < 48 || 640 - 48 * 2 < point.x)
 					{
@@ -114,8 +114,8 @@ int main()
 						continue;
 					}
 
-					Rect rect = boundingRect(contours[i]); // 点の集合に外接する傾いていない矩形を求める
-					rectangle(colorImage8UG, rect, cv::Scalar(255, 0, 0), 2);
+					Rect rect = boundingRect(contours[j]) + Point(eyes[i].x, eyes[i].y); // 点の集合に外接する傾いていない矩形を求める
+					rectangle(colorImage8UG, rect, cv::Scalar(255, 0, 255), 2);
 
 				}
 			}
