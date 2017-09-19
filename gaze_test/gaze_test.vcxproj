@@ -165,6 +165,8 @@
     <Xml Include="haarcascade_eye.xml" />
     <Xml Include="haarcascade_frontalface_alt.xml" />
     <Xml Include="haarcascade_frontalface_default.xml" />
+    <Xml Include="haarcascade_lefteye_2splits.xml" />
+    <Xml Include="haarcascade_righteye_2splits.xml" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

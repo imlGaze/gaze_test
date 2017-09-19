@@ -32,6 +32,12 @@
     <Xml Include="haarcascade_frontalface_alt.xml">
       <Filter>リソース ファイル</Filter>
     </Xml>
+    <Xml Include="haarcascade_righteye_2splits.xml">
+      <Filter>リソース ファイル</Filter>
+    </Xml>
+    <Xml Include="haarcascade_lefteye_2splits.xml">
+      <Filter>リソース ファイル</Filter>
+    </Xml>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="RealSenseAPI.h">

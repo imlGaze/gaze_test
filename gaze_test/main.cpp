@@ -8,8 +8,19 @@
 using namespace cv;
 using std::vector;
 
+Mat gamma(float gamma) {
+	Mat lut(256, 1, CV_8UC1);
+	for (int i = 0; i < 256; i++) {
+		lut.data[i] = 255 * pow((float) i / 255, 1.0 / gamma);
+	}
+
+	return lut;
+}
+
 int main()
 {
+	Mat gamma2 = gamma(2.0);
+
 	Mat irImage16U(480, 640, CV_16UC1, Scalar(0)); // IR受け取り用、グレースケール、1ch
 	Mat irImage8U(480, 640, CV_8UC1, Scalar(0)); // 8bit変換用、グレースケール、1ch
 	Mat irImage8UC3(480, 640, CV_8UC3, Scalar(25, 50, 200)); // グレースケール、3ch、表示用
@@ -21,8 +32,8 @@ int main()
 	VideoWriter writer("input.avi", CV_FOURCC_DEFAULT, 30, cv::Size(640,480), true); // 動画出力用（仮）
 	
 	// Load haar-like cascade classifier
-	CascadeClassifier casc_face("haarcascade_frontalface_alt.xml"); // 正面顔特徴
-	CascadeClassifier casc_eye("haarcascade_eye.xml"); // 目特徴
+	CascadeClassifier casc_reye("haarcascade_lefteye_2splits.xml"); // 左目特徴
+	CascadeClassifier casc_leye("haarcascade_righteye_2splits.xml"); // 右目特徴
 
 	RealSenseAPI realSense;
 	realSense.initialize();
@@ -41,8 +52,7 @@ int main()
 	while (1)
 	{
 		vector<vector<Point>> contours;
-		vector<Rect> faces;
-		vector<Rect> eyes;
+		vector<Rect> leyes, reyes;
 		char key = waitKey(1);
 
 		// IR for gaze detection
@@ -60,65 +70,71 @@ int main()
 		dilate(binImage, binImage, element);
 		dilate(binImage, binImage, element);
 
-
 		// Color for face/eye detection
 		realSense.queryImage(colorImage8U, ResponseType::COLOR);
 		cvtColor(colorImage8U, colorImage8UG, CV_RGB2GRAY);
 		cvtColor(colorImage8UG, colorImage8UG, CV_GRAY2BGR);
-		
 
-		casc_face.detectMultiScale(colorImage8UG, faces); // Face detection
+		// imwrite("pre.png", colorImage8UG);
+		LUT(colorImage8UG, gamma2, colorImage8UG);
+		// imwrite("post.png", colorImage8UG);
 
-		std::cout << faces.size();
-		// Find biggest face
-		int maxFaceSize = 0;
-		int maxFaceIndex = -1;
-		for (int i = 0, n = faces.size(); i < n; i++) {
-			int size = faces[i].width * faces[i].height;
+		Rect l(0, 0, 320, 480);
+		Rect r(320, 0, 320, 480);
+		casc_leye.detectMultiScale(colorImage8UG(l), leyes);
+		casc_reye.detectMultiScale(colorImage8UG(r), reyes);
 
-			if (maxFaceSize < size) {
-				maxFaceSize = size;
-				maxFaceIndex = i;
+		std::cout << "(" << leyes.size() << ',' << reyes.size() << ')';
+		int leyeIndex = -1, reyeIndex = -1;
+		int leyeMaxArea = 0, reyeMaxArea = 0;
+		for (int i = 0, n = leyes.size(); i < n; i++) {
+			int area = leyes[i].width * leyes[i].height;
+			if (leyeMaxArea < area) {
+				leyeIndex = i;
+				leyeMaxArea = area;
+			}
+		}
+		for (int i = 0, n = reyes.size(); i < n; i++) {
+			int area = reyes[i].width * reyes[i].height;
+			if (reyeMaxArea < area) {
+				reyeIndex = i;
+				reyeMaxArea = area;
 			}
 		}
 
-		// Use biggest face rect as actual face(maxFaceIndex >= 0), or detect no face(maxFaceIndex == -1)
-		if (maxFaceIndex != -1) {
-			Rect face = faces[maxFaceIndex];
-			rectangle(colorImage8UG, face, cv::Scalar(255, 0, 0), 2);
-			casc_eye.detectMultiScale(colorImage8UG(face), eyes);
 
-			std::cout << "->" << eyes.size();
-			for (int i = 0, n = eyes.size(); i < n; i++) {
-				eyes[i] = eyes[i] + Point(face.x, face.y);
+		line(colorImage8UG, Point(320, 0), Point(320, 480), Scalar(255, 255, 255), 2);
+		if (leyeIndex != -1 && reyeIndex != -1) {
+			Rect leye = leyes[leyeIndex];
+			Rect reye = reyes[reyeIndex] + Point(320, 0);
 
-				rectangle(colorImage8UG, eyes[i], cv::Scalar(0, 255, 0), 2);
-
-				// 輪郭(Contour)抽出、RETR_EXTERNALで最も外側のみ、CHAIN_APPROX_NONEですべての輪郭点（輪郭を構成する点）を格納
-				cv::findContours(binImage(eyes[i]), contours, RETR_EXTERNAL, CV_CHAIN_APPROX_NONE); // TODO: Color-IRキャリブレーション
-				for (int j = 0, n = contours.size(); j < n; j++)
+			rectangle(colorImage8UG, leye, cv::Scalar(255, 128, 0), 2);
+			rectangle(colorImage8UG, reye, cv::Scalar(128, 255, 0), 2);
+			/*
+			// 輪郭(Contour)抽出、RETR_EXTERNALで最も外側のみ、CHAIN_APPROX_NONEですべての輪郭点（輪郭を構成する点）を格納
+			cv::findContours(binImage(leye), contours, RETR_EXTERNAL, CV_CHAIN_APPROX_NONE); // TODO: Color-IRキャリブレーション
+			for (int j = 0, n = contours.size(); j < n; j++)
+			{
+				if (cv::contourArea(contours[j])>maxArea || cv::contourArea(contours[j])<minArea) // 輪郭サイズフィルタ（仮）
 				{
-					if (cv::contourArea(contours[j])>maxArea || cv::contourArea(contours[j])<minArea) // 輪郭サイズフィルタ（仮）
-					{
-						continue;
-					}
-					Moments moment = cv::moments(contours[j]); // 輪郭重心フィルタ（仮）
-					Point point = Point(moment.m10 / moment.m00, moment.m01 / moment.m00);
-					if (point.x < 48 || 640 - 48 * 2 < point.x)
-					{
-						continue;
-					}
-
-					if (point.y < 50 || 480 - 50 * 2 < point.y)
-					{
-						continue;
-					}
-
-					Rect rect = boundingRect(contours[j]) + Point(eyes[i].x, eyes[i].y); // 点の集合に外接する傾いていない矩形を求める
-					rectangle(colorImage8UG, rect, cv::Scalar(255, 0, 255), 2);
-
+					continue;
 				}
+				Moments moment = cv::moments(contours[j]); // 輪郭重心フィルタ（仮）
+				Point point = Point(moment.m10 / moment.m00, moment.m01 / moment.m00);
+				if (point.x < 48 || 640 - 48 * 2 < point.x)
+				{
+					continue;
+				}
+
+				if (point.y < 50 || 480 - 50 * 2 < point.y)
+				{
+					continue;
+				}
+
+				Rect rect = boundingRect(contours[j]) + Point(leye.x, leye.y); // 点の集合に外接する傾いていない矩形を求める
+				rectangle(colorImage8UG, rect, cv::Scalar(255, 0, 255), 2);
 			}
+			*/
 		}
 
 		cv::imshow("color", colorImage8UG);
@@ -147,8 +163,8 @@ int main()
 			std::cin >> thresh;
 		}
 
-		writer << irImage8UC3;
-
+		//writer << irImage8UC3;
+		writer << colorImage8UG;
 	}
 
 	cv::destroyAllWindows();
