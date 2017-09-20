@@ -156,9 +156,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="ProcessUtil.cpp" />
     <ClCompile Include="RealSenseAPI.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ProcessUtil.h" />
     <ClInclude Include="RealSenseAPI.h" />
   </ItemGroup>
   <ItemGroup>

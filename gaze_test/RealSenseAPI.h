@@ -4,6 +4,8 @@
 #include <RealSense/SampleReader.h>
 #include<opencv2\opencv.hpp>
 
+using namespace cv;
+
 enum ResponseType {
 	IR,
 	COLOR,
@@ -14,7 +16,11 @@ class RealSenseAPI
 {
 public:
 	void initialize();
-	void queryImage(cv::Mat& inputIMage, ResponseType type);
+	void queryImage(Mat& inputImage, ResponseType type);
+
+	void queryIRImage(Mat &irGray, Mat &irBinary, int thresh);
+	void queryColorImage(Mat &color, Mat &gray, Mat &colorBinary, int thresh);
+
 	~RealSenseAPI() {
 		senseManager->Release();
 	};
