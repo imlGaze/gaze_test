@@ -16,6 +16,8 @@ class RealSenseAPI
 {
 public:
 	void initialize();
+	void setLaserPower(int val);
+
 	void queryImage(Mat& inputImage, ResponseType type);
 
 	void queryIRImage(Mat &irGray, Mat &irBinary, int thresh);

@@ -22,6 +22,12 @@ void RealSenseAPI::initialize()
 	}
 }
 
+void RealSenseAPI::setLaserPower(int val) {
+	if (device != nullptr && 0 <= val && val <= 16) {
+		device->SetIVCAMLaserPower(val);
+	}
+}
+
 void RealSenseAPI::queryImage(Mat& inputImage, ResponseType type)
 {
 	status = senseManager->AcquireFrame(true);
@@ -74,11 +80,14 @@ void RealSenseAPI::queryIRImage(Mat &irGray, Mat &irBinary, int thresh) {
 }
 
 void RealSenseAPI::queryColorImage(Mat &colorColor, Mat &colorGray, Mat &colorBinary, int thresh) {
+	Size size = colorColor.size();
+	Mat colorBuffer8UC1(size.height, size.width, CV_8UC1, Scalar(0));
 	queryImage(colorColor, ResponseType::COLOR);
 
-	cvtColor(colorColor, colorGray, CV_RGB2GRAY); // Gray scale
-	cvtColor(colorGray, colorGray, CV_GRAY2BGR); //  // 1ch(Y) -> 3ch(B, G, R)
+	cvtColor(colorColor, colorBuffer8UC1, CV_RGB2GRAY); // Gray scale
+	cvtColor(colorBuffer8UC1, colorGray, CV_GRAY2BGR); //  // 1ch(Y) -> 3ch(B, G, R)
 	
-	threshold(colorGray, colorBinary, thresh, 255, CV_THRESH_BINARY);
+	colorBuffer8UC1 = ~colorBuffer8UC1;
+	threshold(colorBuffer8UC1, colorBinary, thresh, 255, CV_THRESH_BINARY);
 }
 

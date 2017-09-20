@@ -1,4 +1,6 @@
 #include "ProcessUtil.h"
+#include <vector>
+#include <algorithm>
 
 void ProcessUtil::initialize() {
 	cascade_face = CascadeClassifier("haarcascade_frontalface_alt.xml"); // ê≥ñ äÁì¡í•
@@ -11,25 +13,6 @@ void ProcessUtil::getFaces(Mat graySrc, vector<Rect> &faces) {
 
 void ProcessUtil::getEyes(Mat graySrc, vector<Rect> &eyes) {
 	cascade_eye.detectMultiScale(graySrc, eyes);
-}
-
-bool ProcessUtil::getMaxRect(vector<Rect> rects, Rect &result) {
-	int maxArea = 0;
-	int maxIndex = -1;
-	for (int i = 0, n = rects.size(); i < n; i++) {
-		int size = rects[i].width * rects[i].height;
-
-		if (maxArea < size) {
-			maxArea = size;
-			maxIndex = i;
-		}
-	}
-
-	if (maxIndex != -1) {
-		result = rects[maxIndex];
-		return true;
-	}
-	return false;
 }
 
 void ProcessUtil::renderRects(Mat dst, vector<Rect> rects, Scalar color, int thickness) {
