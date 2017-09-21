@@ -20,6 +20,14 @@ void ProcessUtil::renderRects(Mat dst, vector<Rect> rects, Scalar color, int thi
 		rectangle(dst, rects[i], color, thickness);
 	}
 }
+void ProcessUtil::renderPoint(Mat dst, Point point, Scalar color, int thickness) {
+	rectangle(dst, Rect(point.x - 8, point.y - 8, 16, 16), color, thickness);
+}
+void ProcessUtil::renderPoints(Mat dst, vector<Point> points, Scalar color, int thickness) {
+	for (int i = 0, n = points.size(); i < n; i++) {
+		renderPoint(dst, points[i], color, thickness);
+	}
+}
 
 bool ProcessUtil::getPupils(Mat binSrc, vector<Rect> &pupils) { // 瞳の位置
 	Mat element(3, 3, CV_8UC1); // フィルタサイズ

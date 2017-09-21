@@ -5,7 +5,7 @@
 using namespace Intel::RealSense;
 
 
-void RealSenseAPI::initialize()
+bool RealSenseAPI::initialize()
 {
 	/* RealSense‚Ì‰Šú‰» */
 	senseManager = SenseManager::CreateInstance();
@@ -19,21 +19,27 @@ void RealSenseAPI::initialize()
 		device->ResetProperties(Capture::STREAM_TYPE_ANY);
 		device->SetMirrorMode(Capture::Device::MirrorMode::MIRROR_MODE_DISABLED);
 		device->SetIVCAMLaserPower(1);
+		return true;
 	}
+
+	return false;
 }
 
-void RealSenseAPI::setLaserPower(int val) {
+bool RealSenseAPI::setLaserPower(int val) {
 	if (device != nullptr && 0 <= val && val <= 16) {
 		device->SetIVCAMLaserPower(val);
+		return true;
 	}
+	
+	return false;
 }
 
-void RealSenseAPI::queryImage(Mat& inputImage, ResponseType type)
+bool RealSenseAPI::queryImage(Mat& inputImage, ResponseType type)
 {
 	status = senseManager->AcquireFrame(true);
 	if (status < Status::STATUS_NO_ERROR)
 	{
-		return ;
+		return false;
 	}
 
 	const Capture::Sample *sample = senseManager->QuerySample();
@@ -53,41 +59,50 @@ void RealSenseAPI::queryImage(Mat& inputImage, ResponseType type)
 			memcpy(inputImage.data, data.planes[0], data.pitches[0] * 480);
 			senseManager->ReleaseFrame();
 			img->ReleaseAccess(&data);
+			return true;
 		}
 		else
 		{
 			std::cout << "error" << std::endl;
+			return false;
 		}
 	}
 	else
 	{
 		std::cout << "sample is nullptr";
+		return false;
 	}
 }
 
 
-void RealSenseAPI::queryIRImage(Mat &irGray, Mat &irBinary, int thresh) {
+bool RealSenseAPI::queryIRImage(Mat &irGray, Mat &irBinary, int thresh) {
 	Size size = irGray.size();
 	Mat irBuffer16U(size.height, size.width, CV_16UC1, Scalar(0, 0, 0));
 	Mat irBuffer8UC1(size.height, size.width, CV_8UC1, Scalar(0));
-	queryImage(irBuffer16U, ResponseType::IR);
+	if (!queryImage(irBuffer16U, ResponseType::IR)) {
+		return false;
+	}
 	
 	irBuffer16U.convertTo(irBuffer8UC1, CV_8UC3); // 16bit -> 8bit
 	cvtColor(irBuffer8UC1, irGray, CV_GRAY2BGR); //  // 1ch(Y) -> 3ch(B, G, R)
 
 	irBuffer8UC1 = ~irBuffer8UC1; // Invert Black and white
 	threshold(irBuffer8UC1, irBinary, thresh, 255, CV_THRESH_BINARY);
+	return true;
 }
 
-void RealSenseAPI::queryColorImage(Mat &colorColor, Mat &colorGray, Mat &colorBinary, int thresh) {
+bool RealSenseAPI::queryColorImage(Mat &colorColor, Mat &colorGray, Mat &colorBinary, int thresh) {
 	Size size = colorColor.size();
 	Mat colorBuffer8UC1(size.height, size.width, CV_8UC1, Scalar(0));
-	queryImage(colorColor, ResponseType::COLOR);
+	if (!queryImage(colorColor, ResponseType::COLOR)) {
+		return false;
+	}
 
 	cvtColor(colorColor, colorBuffer8UC1, CV_RGB2GRAY); // Gray scale
 	cvtColor(colorBuffer8UC1, colorGray, CV_GRAY2BGR); //  // 1ch(Y) -> 3ch(B, G, R)
 	
 	colorBuffer8UC1 = ~colorBuffer8UC1;
 	threshold(colorBuffer8UC1, colorBinary, thresh, 255, CV_THRESH_BINARY);
+	return true;
 }
 

@@ -15,13 +15,13 @@ enum ResponseType {
 class RealSenseAPI
 {
 public:
-	void initialize();
-	void setLaserPower(int val);
+	bool initialize();
+	bool setLaserPower(int val);
 
-	void queryImage(Mat& inputImage, ResponseType type);
+	bool queryImage(Mat& inputImage, ResponseType type);
 
-	void queryIRImage(Mat &irGray, Mat &irBinary, int thresh);
-	void queryColorImage(Mat &color, Mat &gray, Mat &colorBinary, int thresh);
+	bool queryIRImage(Mat &irGray, Mat &irBinary, int thresh);
+	bool queryColorImage(Mat &color, Mat &gray, Mat &colorBinary, int thresh);
 
 	~RealSenseAPI() {
 		senseManager->Release();

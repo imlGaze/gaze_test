@@ -14,6 +14,8 @@ public:
 	void getEyes(Mat graySrc, vector<Rect> &eyes);
 
 	void renderRects(Mat dst, vector<Rect> rects, Scalar color = Scalar(255, 255, 255), int thickness = 2);
+	void renderPoint(Mat dst, Point point, Scalar color, int thickness);
+	void renderPoints(Mat dst, vector<Point> points, Scalar color, int thickness);
 
 	bool getPupils(Mat binSrc, vector<Rect> &pupils); // “µ‚ÌˆÊ’u
 
