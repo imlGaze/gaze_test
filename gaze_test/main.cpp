@@ -65,6 +65,7 @@ int main()
 	bool mode = false;
 	bool laser = true;
 	bool cross = false;
+	bool faceStop = false;
 
 
 	// TODO: キャリブレーション
@@ -83,7 +84,10 @@ int main()
 			putText(colorColor, "No signal", Point(30, 30), CV_FONT_HERSHEY_SIMPLEX, 1, Scalar(255), 1);
 		}
 
+		Mat irGrayClip = irGray(irClip);
 		Mat irBinaryClip = irBinary(irClip);
+		Mat colorColorClip = colorColor(colorClip);
+		Mat colorGrayClip = colorGray(colorClip);
 		Mat colorBinaryClip = colorBinary(colorClip);
 
 		if (calibMode) {
@@ -109,20 +113,37 @@ int main()
 			if (colorClip.width != 0) {
 				rectangle(colorColor, colorClip, Scalar(0, 255), 2);
 			}
+
+
+			if (cross) {
+				line(colorColor, Point(320, 0), Point(COLOR_WIDTH / 2, COLOR_HEIGHT), Scalar(255), 2);
+				line(colorColor, Point(0, 240), Point(COLOR_WIDTH, COLOR_HEIGHT / 2), Scalar(255), 2);
+				line(irGray, Point(320, 0), Point(IR_WIDTH / 2, IR_HEIGHT), Scalar(255), 2);
+				line(irGray, Point(0, 240), Point(IR_WIDTH, IR_HEIGHT / 2), Scalar(255), 2);
+			}
+			cv::imshow("colorColor", colorColor);
+			cv::imshow("colorBinary", colorBinary);
+			cv::imshow("irGray", irGray);
+			cv::imshow("irBinary", irBinary);
 		}
 		else {
+			/*
 			Mat element(3, 3, CV_8UC1); // フィルタサイズ
-			erode(irBinary, irBinary, element, Point(-1, -1), 2); // 収縮(ノイズ除去)、対象ピクセルの近傍のうち最大
-			dilate(irBinary, irBinary, element, Point(-1, -1), 3); // 膨張（強調）、対象ピクセルの近傍のうち最小
+			erode(irBinaryClip, irBinaryClip, element); // 収縮(ノイズ除去)、対象ピクセルの近傍のうち最大
+			erode(irBinaryClip, irBinaryClip, element);
+			dilate(irBinaryClip, irBinaryClip, element); // 膨張（強調）、対象ピクセルの近傍のうち最小
+			dilate(irBinaryClip, irBinaryClip, element);
+			dilate(irBinaryClip, irBinaryClip, element);
+			*/
 
 			vector<Rect> faces;
-			util.getFaces(colorGray, faces);
-			// util.renderRects(colorColor, faces, Scalar(255, 0, 0));
+			util.getFaces(colorGrayClip, faces);
+		    //util.renderRects(colorColorClip, faces, Scalar(255, 0, 0));
 
 			Rect face;
 			Rect lEye, rEye;
 
-			if (faces.size() != 0) {
+			if (faces.size() != 0 && ! faceStop) {
 				std::sort(faces.begin(), faces.end(), areaIsGreater);
 				face = faces[0];
 			}
@@ -134,7 +155,9 @@ int main()
 				Rect upperHalf(face.x, face.y, face.width, face.height / 2);
 
 				vector<Rect> eyes;
-				util.getEyes(colorGray(upperHalf), eyes);
+				util.getEyes(colorGrayClip(upperHalf), eyes);
+				//util.renderRects(colorColorClip, eyes, Scalar(0, 255, 0));
+
 
 				if (eyes.size() >= 2) {
 					std::sort(eyes.begin(), eyes.end(), areaIsGreater);
@@ -148,37 +171,57 @@ int main()
 				}
 
 				if (lEye.width != 0) {
-					line(colorColor, Point(upperHalf.x, upperHalf.y + upperHalf.height), Point(upperHalf.x + upperHalf.width, upperHalf.y + upperHalf.height), Scalar(255, 255, 255), 2);
-					rectangle(colorColor, face, Scalar(255, 0, 0), 2);
+					line(colorColorClip, Point(upperHalf.x, upperHalf.y + upperHalf.height), Point(upperHalf.x + upperHalf.width, upperHalf.y + upperHalf.height), Scalar(255, 255, 255), 2);
+					rectangle(colorColorClip, face, Scalar(255, 0, 0), 2);
 
-					rectangle(colorColor, lEye, Scalar(255, 255, 0), 2);
-					rectangle(colorColor, rEye, Scalar(0, 255, 255), 2);
-					rectangle(irGray, lEye, Scalar(255, 255, 0), 2);
-					rectangle(irGray, rEye, Scalar(0, 255, 255), 2);
+					rectangle(colorColorClip, lEye, Scalar(255, 255, 0), 2);
+					rectangle(colorColorClip, rEye, Scalar(0, 255, 255), 2);
+					rectangle(irGrayClip, lEye, Scalar(255, 255, 0), 2);
+					rectangle(irGrayClip, rEye, Scalar(0, 255, 255), 2);
 
-					vector<Rect> pupils;
-					util.getPupils(irBinary, pupils);
-					util.renderRects(colorColor, pupils, Scalar(255, 0, 255));
+
+					for (int j = 0; j < 1; j++) {
+						Rect eye = j == 0 ? lEye : rEye;
+
+						vector<Rect> pupils;
+						util.getPupils(irBinaryClip(eye), pupils);
+						for (int i = 0, n = pupils.size(); i < n; i++) {
+							pupils[i] += Point(eye.x, eye.y);
+						}
+						util.renderRects(colorColorClip, pupils, Scalar(255, 0, 255));
+
+						auto center = [eye](Rect rect) {
+							return Point(rect.x + rect.width / 2, rect.y + rect.height / 2);
+						};
+						auto len = [](Point point) {
+							return sqrt(point.x*point.x + point.y*point.y);
+						};
+
+						if (pupils.size() != 0) {
+							std::sort(pupils.begin(), pupils.end(), [eye, center, len](Rect a, Rect b) { // TODO: フィルタ処理
+								return a.area() < b.area() && len(center(eye) - center(a)) < len(center(eye) - center(b));
+							});
+							Rect pupil = pupils[0];
+
+							rectangle(irGrayClip, pupil, Scalar(0, 0, 255), 2);
+							rectangle(irGray, pupil + Point(irClip.x, irClip.y), Scalar(0, 0, 255), 2);
+						}
+
+					}
 
 					lastLEye = lEye;
 					lastREye = rEye;
 					lastFace = face;
 				}
 			}
+
 			writer << irGray;
-		}
 
-		if (cross) {
-			line(colorColor, Point(320, 0), Point(COLOR_WIDTH / 2, COLOR_HEIGHT), Scalar(255), 2);
-			line(colorColor, Point(0, 240), Point(COLOR_WIDTH, COLOR_HEIGHT / 2), Scalar(255), 2);
-			line(irGray, Point(320, 0), Point(IR_WIDTH / 2, IR_HEIGHT), Scalar(255), 2);
-			line(irGray, Point(0, 240), Point(IR_WIDTH, IR_HEIGHT / 2), Scalar(255), 2);
+			cv::imshow("colorColor", colorColorClip);
+			cv::imshow("colorBinary", colorBinaryClip);
+			cv::imshow("irGray", irGrayClip);
+			cv::imshow("irBinary", irBinaryClip);
 		}
-
-		cv::imshow("colorColor", colorColor);
-		cv::imshow("colorBinary", colorBinary);
-		cv::imshow("irGray", irGray);
-		cv::imshow("irBinary", irBinary);
 
 		if (key == 'q')
 		{
@@ -199,6 +242,11 @@ int main()
 			laser = !laser;
 			std::cout << "Laser: " << (laser ? "on" : "off") << std::endl;
 			realSense.setLaserPower(laser ? 1 : 0);
+		}
+		else if (key == 'f')
+		{
+			faceStop = !faceStop;
+			std::cout << "FaceStop: " << (faceStop ? "on" : "off") << std::endl;
 		}
 	}
 
