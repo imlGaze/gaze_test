@@ -28,16 +28,48 @@ void mouseCallback(int eventType, int x, int y, int flags, void *userData) {
 }
 
 int do_main();
+int do_main2();
 
 int main()
 {
 	// return do_photo();
 	// return do_calibration();
 	// do_main();
-	do_main2();
+
+	return do_main2();
 }
 
 int do_main2() {
+	Mat colorCM, irCM;
+	Mat colorDC, irDC;
+	Mat colorR, colorT, irR, irT;
+	do_calibration(colorCM, colorDC, colorR, colorT, irCM, irDC, irR, irT);
+	
+	/*
+	Mat colorR33, irR33;
+	Rodrigues(colorR, colorR33);
+	Rodrigues(irR, irR33);
+
+	Mat R = irR.mul(1 / (colorR33 * irT));
+	Mat T = irR - R.mul(colorT);
+	Mat R_;
+	Rodrigues(R, R_);
+
+	std::cout << R_ << std::endl;
+	std::cout << T << std::endl;
+	std::cout << std::endl;
+	*/
+	std::cout << colorR << std::endl;
+	std::cout << colorT << std::endl;
+	std::cout << std::endl;
+	std::cout << irR << std::endl;
+	std::cout << irT << std::endl;
+
+	// TODO: stereoRectify(irCM, irDC, colorCM, colorDC, Size(IMAGE_WIDTH, IMAGE_HEIGHT) )
+
+	int s;
+	std::cin >> s;
+	return 0;
 }
 
 int do_main()

@@ -1,8 +1,9 @@
+#include"calibration.h"
+
 #include<iostream>
-#include<opencv2\opencv.hpp>
-#include"ProcessUtil.h"
 #include<vector>
 #include"const.h"
+#include"ProcessUtil.h"
 
 using namespace cv;
 using std::vector;
@@ -23,7 +24,7 @@ void load_images(char *prefix, vector<Mat> &raw, vector<Mat> &gray) {
 	}
 }
 
-bool createCalibrationParams(char *prefix, vector<vector<Vec3f>> &object_points, vector<vector<Point2f>> &image_points, bool handCalibrate)
+void createCalibrationParams(char *prefix, vector<vector<Vec3f>> &object_points, vector<vector<Point2f>> &image_points, bool handCalibrate = false)
 {
 	vector<Mat> raw;
 	vector<Mat> gray;
@@ -34,7 +35,6 @@ bool createCalibrationParams(char *prefix, vector<vector<Vec3f>> &object_points,
 
 	Size patternSize = Size(CHESS_COLS, CHESS_ROWS);
 	int handSkip = 0, autoSkip = 0;
-	vector<vector<Point2f>> corners;
 	for (int i = 0; i < IMAGE_COUNT; i++) {
 		vector<Point2f> image_corners;
 		if (findChessboardCorners(gray[i], patternSize, image_corners, CALIB_CB_ADAPTIVE_THRESH + CALIB_CB_NORMALIZE_IMAGE + CALIB_CB_FAST_CHECK)) {
@@ -47,7 +47,7 @@ bool createCalibrationParams(char *prefix, vector<vector<Vec3f>> &object_points,
 
 					char key = waitKey(1);
 					if (key == ' ') {
-						corners.push_back(image_corners);
+						image_points.push_back(image_corners);
 						std::cout << i << ',' << std::flush;
 						break;
 					}
@@ -58,7 +58,7 @@ bool createCalibrationParams(char *prefix, vector<vector<Vec3f>> &object_points,
 				}
 			}
 			else {
-				corners.push_back(image_corners);
+				image_points.push_back(image_corners); // TODO: INDEXÇÃäKëwÇ™ïsà¿ÅiIMAGE_INDEX/WINDOW_INDEXÇ»ÇÃÇ©ÅAWINDOW/INDEX/IMAGE_INDEXÇ»ÇÃÇ©Åj
 			}
 		}
 		else {
@@ -67,10 +67,9 @@ bool createCalibrationParams(char *prefix, vector<vector<Vec3f>> &object_points,
 	}
 	cv::destroyAllWindows();
 
-	std::cout << ") -> " << corners.size() << "/" << handSkip << "/" << autoSkip << std::endl;
+	std::cout << ") -> " << image_points.size() << "/" << handSkip << "/" << autoSkip << std::endl;
 
-	vector<vector<Vec3f>> object_points;
-	for (int i = 0, n = corners.size(); i < n; i++) {
+	for (int i = 0, n = image_points.size(); i < n; i++) {
 		vector<Vec3f> of_image;
 		for (int row = 0; row < patternSize.height; row++) {
 			for (int col = 0; col < patternSize.width; col++) {
@@ -82,27 +81,40 @@ bool createCalibrationParams(char *prefix, vector<vector<Vec3f>> &object_points,
 
 }
 
-void do_calibration(Mat &R, Mat &T) {
-	vector<vector<Vec3f>> irOp;
-	vector<vector<Point2f>> irIp;
+void do_calibration(Mat &colorCameraMatrix, Mat &colorDistCoeffs, Mat &colorR, Mat &colorT, Mat &irCameraMatrix, Mat &irDistCoeffs, Mat &irR, Mat &irT) {
 	vector<vector<Vec3f>> colorOp;
 	vector<vector<Point2f>> colorIp;
+	vector<vector<Vec3f>> irOp;
+	vector<vector<Point2f>> irIp;
 
-	createCalibrationParams("ir", irOp, irIp, false);
-	createCalibrationParams("color", colorOp, colorIp, false);
+	createCalibrationParams("color", colorOp, colorIp);
+	createCalibrationParams("ir", irOp, irIp);
 
-	Mat irCameraMatrix(3, 3, CV_32FC1);
-	Mat irDistCoeffs(1, 4, CV_32FC1);
-	Mat colorCameraMatrix(3, 3, CV_32FC1);
-	Mat colorDistCoeffs(1, 4, CV_32FC1);
-	Size size = Size(IMAGE_WIDTH, IMAGE_HEIGHT);
-	Mat E, F;
+	// Mat irCameraMatrix(3, 3, CV_32FC1);
+	// Mat colorCameraMatrix(3, 3, CV_32FC1);
+	// Mat colorDistCoeffs(1, 4, CV_32FC1);
+	// Mat irDistCoeffs(1, 4, CV_32FC1);
+	const Size size = Size(IMAGE_WIDTH, IMAGE_HEIGHT);
 
-	// vector<Mat> rvecs, tvecs;
-	// calibrateCamera(object_points, corners, Size(IMAGE_WIDTH, IMAGE_HEIGHT), cameraMatrix, distCoeffs, rvecs, tvecs);
+	vector<Mat> colorRVecs, colorTVecs;
+	// vector<Mat> irRVecs, irTVecs;
+	calibrateCamera(colorOp, colorIp, size, colorCameraMatrix, colorDistCoeffs, colorRVecs, colorTVecs);
+	// calibrateCamera(irOp, irIp, size, irCameraMatrix, irDistCoeffs, irRVecs, irTVecs);
 
+	Mat dR, dT, E, F;
 	// irCameraMatrix, irDistCoeffs
 	// colorCameraMatrix, colorDistCoeffs
 	// R, T, E, F
-	stereoCalibrate(irOp, irIp, colorIp, irCameraMatrix, irDistCoeffs, colorCameraMatrix, colorDistCoeffs, Size(IMAGE_WIDTH, IMAGE_HEIGHT), R, T, E, F);
+	stereoCalibrate(irOp, irIp, colorIp, irCameraMatrix, irDistCoeffs, colorCameraMatrix, colorDistCoeffs, Size(IMAGE_WIDTH, IMAGE_HEIGHT), dR, dT, E, F);
+
+	// colorR = colorRVecs[0];
+	Rodrigues(colorRVecs[0], colorR);
+	colorT = colorTVecs[0];
+	irR = colorR + dR;
+	irT = colorT + dT;
+
+	//irR = irRVecs[0];
+	// Rodrigues(irRVecs[0], irR);
+	// irT = irTVecs[0];
+
 }
