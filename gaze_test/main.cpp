@@ -6,10 +6,9 @@
 #include"ProcessUtil.h"
 #include<vector>
 
-#define IR_WIDTH 640
-#define IR_HEIGHT 480
-#define COLOR_WIDTH 640
-#define COLOR_HEIGHT 480
+#include "const.h"
+#include "photo.h"
+#include "calibration.h"
 
 using namespace cv;
 using std::vector;
@@ -28,7 +27,20 @@ void mouseCallback(int eventType, int x, int y, int flags, void *userData) {
 	mouse->flags = flags;
 }
 
+int do_main();
+
 int main()
+{
+	// return do_photo();
+	// return do_calibration();
+	// do_main();
+	do_main2();
+}
+
+int do_main2() {
+}
+
+int do_main()
 {
 	Mat irGray(IR_HEIGHT, IR_WIDTH, CV_8UC3, Scalar(25, 50, 200)); // グレースケール、3ch、表示用
 	Mat irBinary(IR_HEIGHT, IR_WIDTH, CV_8UC1, Scalar(0)); // 2値、輪郭抽出用
@@ -36,6 +48,11 @@ int main()
 	Mat colorColor(COLOR_HEIGHT, COLOR_WIDTH, CV_8UC3, Scalar(0, 0, 0)); // Color受け取り用、カラー、3ch、表示用
 	Mat colorGray(COLOR_HEIGHT, COLOR_WIDTH, CV_8UC3, Scalar(25, 50, 200)); // グレースケール、3ch、特徴抽出用
 	Mat colorBinary(COLOR_HEIGHT, COLOR_WIDTH, CV_8UC1, Scalar(0)); // 2値、キャリブレーション用
+
+	Mat intrinsic(3, 3, CV_32FC1);
+	Mat rotation(1, 3, CV_32FC1);
+	Mat translation(1, 3, CV_32FC1);
+	Mat distortion(1, 4, CV_32FC1);
 
 	VideoWriter writer("input.avi", CV_FOURCC_DEFAULT, 30, cv::Size(IR_WIDTH, IR_HEIGHT), true); // 動画出力用（仮）
 

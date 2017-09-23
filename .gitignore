@@ -245,3 +245,8 @@ ModelManifest.xml
 .fake/
 
 *.avi
+*.png
+/gaze_test/calib
+/gaze_test/calib
+/gaze_test/calib
+/gaze_test/calib/color_0.png
