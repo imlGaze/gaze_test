@@ -81,7 +81,7 @@ void createCalibrationParams(char *prefix, vector<vector<Vec3f>> &object_points,
 
 }
 
-void do_calibration(Mat &colorCameraMatrix, Mat &colorDistCoeffs, Mat &colorR, Mat &colorT, Mat &irCameraMatrix, Mat &irDistCoeffs, Mat &irR, Mat &irT) {
+void do_calibration(Mat &colorCameraMatrix, Mat &colorDistCoeffs, Mat &colorR, Mat &colorT, Mat &irCameraMatrix, Mat &irDistCoeffs, Mat &irR, Mat &irT, Mat &R, Mat &T) {
 	vector<vector<Vec3f>> colorOp;
 	vector<vector<Point2f>> colorIp;
 	vector<vector<Vec3f>> irOp;
@@ -98,6 +98,7 @@ void do_calibration(Mat &colorCameraMatrix, Mat &colorDistCoeffs, Mat &colorR, M
 
 	vector<Mat> colorRVecs, colorTVecs;
 	// vector<Mat> irRVecs, irTVecs;
+	std::cout << "Begin calibrate color" << std::endl;
 	calibrateCamera(colorOp, colorIp, size, colorCameraMatrix, colorDistCoeffs, colorRVecs, colorTVecs);
 	// calibrateCamera(irOp, irIp, size, irCameraMatrix, irDistCoeffs, irRVecs, irTVecs);
 
@@ -105,7 +106,11 @@ void do_calibration(Mat &colorCameraMatrix, Mat &colorDistCoeffs, Mat &colorR, M
 	// irCameraMatrix, irDistCoeffs
 	// colorCameraMatrix, colorDistCoeffs
 	// R, T, E, F
+	std::cout << "Begin stereo calibrate" << std::endl;
 	stereoCalibrate(irOp, irIp, colorIp, irCameraMatrix, irDistCoeffs, colorCameraMatrix, colorDistCoeffs, Size(IMAGE_WIDTH, IMAGE_HEIGHT), dR, dT, E, F);
+
+	R = dR;
+	T = dT;
 
 	// colorR = colorRVecs[0];
 	Rodrigues(colorRVecs[0], colorR);

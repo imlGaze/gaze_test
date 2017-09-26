@@ -43,8 +43,52 @@ int do_main2() {
 	Mat colorCM, irCM;
 	Mat colorDC, irDC;
 	Mat colorR, colorT, irR, irT;
-	do_calibration(colorCM, colorDC, colorR, colorT, irCM, irDC, irR, irT);
+	Mat R, T;
+	do_calibration(colorCM, colorDC, colorR, colorT, irCM, irDC, irR, irT, R, T);
+
+	Mat color0 = imread("calib/color_0.png");
+	Mat ir0 = imread("calib/ir_0.png");
+
+	namedWindow("color", WINDOW_AUTOSIZE);
+	namedWindow("ir", WINDOW_AUTOSIZE);
+
+	Mouse irMouse, colorMouse;
+	setMouseCallback("ir", mouseCallback, &irMouse);
+	setMouseCallback("color", mouseCallback, &colorMouse);
+
+	ProcessUtil util;
+	util.initialize();
+
+	Mat w = (Mat_<double>(4, 1) << 0, 0, 0, 1);
+	Mat rt = Mat_<double>(4, 3);
+	R.copyTo(rt(Rect(0, 0, 3, 3)));
+	T.copyTo(rt(Rect(3, 0, 1, 3))); // TODO: test ERROR
 	
+	while (1) {
+		if (colorMouse.eventType == CV_EVENT_LBUTTONDOWN) {
+			Mat lc = (Mat_<double>(3, 1) << colorMouse.x, colorMouse.y, 1);
+			Mat li; // = R * lc + T;
+			li = irCM * colorCM.inv() * lc - irCM * rt * w;
+			
+			double lix, liy;
+			lix = li.at<double>(0, 0);
+			liy = li.at<double>(1, 0);
+			double lcx, lcy;
+			lcx = lc.at<double>(0, 0);
+			lcy = lc.at<double>(1, 0);
+			std::cout << lc << "->" << li << '!' << lix << ',' << liy << '!' << lcx << ',' << lcy << std::endl;
+			util.renderPoint(ir0, Point(lcx, lcy), Scalar(255), 2);
+			util.renderPoint(ir0, Point(lix, liy), Scalar(0, 255), 2);
+			util.renderPoint(color0, Point(lcx, lcy), Scalar(255), 2);
+			util.renderPoint(color0, Point(lix, liy), Scalar(0, 255), 2);
+		}
+
+		imshow("color", color0);
+		imshow("ir", ir0);
+
+		char key = waitKey(1);
+		if (key == 'q') break;
+	}
 	/*
 	Mat colorR33, irR33;
 	Rodrigues(colorR, colorR33);
