@@ -6,10 +6,9 @@
 #include"ProcessUtil.h"
 #include<vector>
 
-#define IR_WIDTH 640
-#define IR_HEIGHT 480
-#define COLOR_WIDTH 640
-#define COLOR_HEIGHT 480
+#include "const.h"
+#include "photo.h"
+#include "calibration.h"
 
 using namespace cv;
 using std::vector;
@@ -28,7 +27,52 @@ void mouseCallback(int eventType, int x, int y, int flags, void *userData) {
 	mouse->flags = flags;
 }
 
+int do_main();
+int do_main2();
+
 int main()
+{
+	// return do_photo();
+	// return do_calibration();
+	// do_main();
+
+	return do_main2();
+}
+
+int do_main2() {
+	Mat colorCM, irCM;
+	Mat colorDC, irDC;
+	Mat colorR, colorT, irR, irT;
+	do_calibration(colorCM, colorDC, colorR, colorT, irCM, irDC, irR, irT);
+	
+	/*
+	Mat colorR33, irR33;
+	Rodrigues(colorR, colorR33);
+	Rodrigues(irR, irR33);
+
+	Mat R = irR.mul(1 / (colorR33 * irT));
+	Mat T = irR - R.mul(colorT);
+	Mat R_;
+	Rodrigues(R, R_);
+
+	std::cout << R_ << std::endl;
+	std::cout << T << std::endl;
+	std::cout << std::endl;
+	*/
+	std::cout << colorR << std::endl;
+	std::cout << colorT << std::endl;
+	std::cout << std::endl;
+	std::cout << irR << std::endl;
+	std::cout << irT << std::endl;
+
+	// TODO: stereoRectify(irCM, irDC, colorCM, colorDC, Size(IMAGE_WIDTH, IMAGE_HEIGHT) )
+
+	int s;
+	std::cin >> s;
+	return 0;
+}
+
+int do_main()
 {
 	Mat irGray(IR_HEIGHT, IR_WIDTH, CV_8UC3, Scalar(25, 50, 200)); // グレースケール、3ch、表示用
 	Mat irBinary(IR_HEIGHT, IR_WIDTH, CV_8UC1, Scalar(0)); // 2値、輪郭抽出用
@@ -36,6 +80,11 @@ int main()
 	Mat colorColor(COLOR_HEIGHT, COLOR_WIDTH, CV_8UC3, Scalar(0, 0, 0)); // Color受け取り用、カラー、3ch、表示用
 	Mat colorGray(COLOR_HEIGHT, COLOR_WIDTH, CV_8UC3, Scalar(25, 50, 200)); // グレースケール、3ch、特徴抽出用
 	Mat colorBinary(COLOR_HEIGHT, COLOR_WIDTH, CV_8UC1, Scalar(0)); // 2値、キャリブレーション用
+
+	Mat intrinsic(3, 3, CV_32FC1);
+	Mat rotation(1, 3, CV_32FC1);
+	Mat translation(1, 3, CV_32FC1);
+	Mat distortion(1, 4, CV_32FC1);
 
 	VideoWriter writer("input.avi", CV_FOURCC_DEFAULT, 30, cv::Size(IR_WIDTH, IR_HEIGHT), true); // 動画出力用（仮）
 

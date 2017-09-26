@@ -113,7 +113,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Libraries\openCV3.2.0(x64)\install\x64\vc14\lib;C:\Libraries\RSSDK\lib\x64</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opencv_objdetect320d.lib;opencv_video320d.lib;opencv_videoio320d.lib;opencv_highgui320d.lib;opencv_imgcodecs320d.lib;opencv_imgproc320d.lib;opencv_core320d.lib;libpxc_d.lib;libpxcmd_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opencv_calib3d320d.lib;opencv_objdetect320d.lib;opencv_video320d.lib;opencv_videoio320d.lib;opencv_highgui320d.lib;opencv_imgcodecs320d.lib;opencv_imgproc320d.lib;opencv_core320d.lib;libpxc_d.lib;libpxcmd_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -150,16 +150,21 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>opencv_objdetect320.lib;opencv_video320.lib;opencv_videoio320.lib;opencv_highgui320.lib;opencv_imgcodecs320.lib;opencv_imgproc320.lib;opencv_core320.lib;libpxc.lib;libpxcmd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opencv_calib3d320.lib;opencv_objdetect320.lib;opencv_video320.lib;opencv_videoio320.lib;opencv_highgui320.lib;opencv_imgcodecs320.lib;opencv_imgproc320.lib;opencv_core320.lib;libpxc.lib;libpxcmd.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>C:\Libraries\openCV3.2.0(x64)\install\x64\vc14\lib;C:\Libraries\RSSDK\lib\x64</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="calibration.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="photo.cpp" />
     <ClCompile Include="ProcessUtil.cpp" />
     <ClCompile Include="RealSenseAPI.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="calibration.h" />
+    <ClInclude Include="const.h" />
+    <ClInclude Include="photo.h" />
     <ClInclude Include="ProcessUtil.h" />
     <ClInclude Include="RealSenseAPI.h" />
   </ItemGroup>
