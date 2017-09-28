@@ -59,28 +59,58 @@ int do_main2() {
 	ProcessUtil util;
 	util.initialize();
 
-	Mat w = (Mat_<double>(4, 1) << 0, 0, 0, 1);
-	Mat rt = Mat_<double>(4, 3);
-	R.copyTo(rt(Rect(0, 0, 3, 3)));
-	T.copyTo(rt(Rect(3, 0, 1, 3))); // TODO: test ERROR
-	
+	Mat colorRT = Mat_<double>(3, 4);
+	colorR.copyTo(colorRT(Rect(0, 0, 3, 3)));
+	colorT.copyTo(colorRT(Rect(3, 0, 1, 3)));
+
+	Mat irRT = Mat_<double>(3, 4);
+	irR.copyTo(irRT(Rect(0, 0, 3, 3)));
+	irT.copyTo(irRT(Rect(3, 0, 1, 3)));
+
+	std::cout << "RT_COLOR: " << colorRT << std::endl;
+	std::cout << "RT_IR: " << irRT << std::endl;
+
+	Mat origin = (Mat_<double>(4, 1) << 0, 0, 0, 1);
+	Mat co = colorCM * colorRT * origin;
+	Mat io = irCM * irRT * origin;
+	std::cout << "ColorOrg: " << co << std::endl;
+	std::cout << "IROrg: " << io << std::endl;
+
+	Mat p1 = (Mat_<double>(4, 1) << 1, 0, 0, 1);
+	Mat cop1 = colorCM * colorRT * p1;
+	Mat iop1 = irCM * irRT * p1;
+	std::cout << "Color+1: " << cop1 - co << std::endl;
+	std::cout << "IR+1: " << iop1 - io << std::endl;
+
+	Mat m1 = (Mat_<double>(4, 1) << 0, 1, 0, 1);
+	Mat com1 = colorCM * colorRT * m1;
+	Mat iom1 = irCM * irRT * m1;
+	std::cout << "Color-1: " << com1 - co << std::endl;
+	std::cout << "IR-1: " << iom1 - io << std::endl;
+
+	double width = colorCM.at<double>(0, 2) * 2;
+	double height = colorCM.at<double>(1, 2) * 2;
+	std::cout << Point(width, height) << std::endl;
+
 	while (1) {
 		if (colorMouse.eventType == CV_EVENT_LBUTTONDOWN) {
-			Mat lc = (Mat_<double>(3, 1) << colorMouse.x, colorMouse.y, 1);
-			Mat li; // = R * lc + T;
-			li = irCM * colorCM.inv() * lc - irCM * rt * w;
-			
-			double lix, liy;
-			lix = li.at<double>(0, 0);
-			liy = li.at<double>(1, 0);
-			double lcx, lcy;
-			lcx = lc.at<double>(0, 0);
-			lcy = lc.at<double>(1, 0);
-			std::cout << lc << "->" << li << '!' << lix << ',' << liy << '!' << lcx << ',' << lcy << std::endl;
-			util.renderPoint(ir0, Point(lcx, lcy), Scalar(255), 2);
-			util.renderPoint(ir0, Point(lix, liy), Scalar(0, 255), 2);
-			util.renderPoint(color0, Point(lcx, lcy), Scalar(255), 2);
-			util.renderPoint(color0, Point(lix, liy), Scalar(0, 255), 2);
+			// Mat lc = (Mat_<double>(3, 1) << colorMouse.x, colorMouse.y, 1);
+			// Mat w = colorRTinv * colorCM.inv() * lc;
+			// Mat li = irCM * irRT * w;
+			// li = irCM * colorCM.inv() * lc - irCM * rt * w;
+
+			Mat w = (Mat_<double>(4, 1) << (double)colorMouse.x / width, (double)colorMouse.y / height, 0, 1);
+			Mat lc = colorCM * colorRT * w - co;
+			Mat li = irCM * irRT * w - io;
+
+			std::cout << "World: " << Point(colorMouse.x, colorMouse.y) << w << std::endl;
+			std::cout << "Color: " << lc << std::endl;
+			std::cout << "IR: " << li << std::endl;
+
+			util.renderPoint(ir0, Point(colorMouse.x, colorMouse.y), Scalar(255), 2);
+			util.renderPoint(ir0, Point(lc.at<double>(0), lc.at<double>(1)), Scalar(0, 255), 2);
+			util.renderPoint(color0, Point(colorMouse.x, colorMouse.y), Scalar(255), 2);
+			util.renderPoint(color0, Point(lc.at<double>(0), lc.at<double>(1)), Scalar(0, 255), 2);
 		}
 
 		imshow("color", color0);

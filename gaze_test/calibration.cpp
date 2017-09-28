@@ -97,10 +97,11 @@ void do_calibration(Mat &colorCameraMatrix, Mat &colorDistCoeffs, Mat &colorR, M
 	const Size size = Size(IMAGE_WIDTH, IMAGE_HEIGHT);
 
 	vector<Mat> colorRVecs, colorTVecs;
-	// vector<Mat> irRVecs, irTVecs;
+	vector<Mat> irRVecs, irTVecs;
 	std::cout << "Begin calibrate color" << std::endl;
 	calibrateCamera(colorOp, colorIp, size, colorCameraMatrix, colorDistCoeffs, colorRVecs, colorTVecs);
-	// calibrateCamera(irOp, irIp, size, irCameraMatrix, irDistCoeffs, irRVecs, irTVecs);
+	std::cout << "Begin calibrate ir" << std::endl;
+	calibrateCamera(irOp, irIp, size, irCameraMatrix, irDistCoeffs, irRVecs, irTVecs);
 
 	Mat dR, dT, E, F;
 	// irCameraMatrix, irDistCoeffs
@@ -115,11 +116,11 @@ void do_calibration(Mat &colorCameraMatrix, Mat &colorDistCoeffs, Mat &colorR, M
 	// colorR = colorRVecs[0];
 	Rodrigues(colorRVecs[0], colorR);
 	colorT = colorTVecs[0];
-	irR = colorR + dR;
-	irT = colorT + dT;
+	// irR = colorR + dR;
+	// irT = colorT + dT;
 
 	//irR = irRVecs[0];
-	// Rodrigues(irRVecs[0], irR);
-	// irT = irTVecs[0];
+	Rodrigues(irRVecs[0], irR);
+	irT = irTVecs[0];
 
 }
