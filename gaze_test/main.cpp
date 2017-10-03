@@ -41,8 +41,18 @@ int main()
 }
 
 int do_main3() {
-	Mat color = imread("calib/color_0.png");
-	Mat ir = imread("calib/ir_0.png");
+	Mat colorCM, irCM;
+	Mat colorDC, irDC;
+	Mat colorR, colorT, irR, irT;
+	Mat R, T;
+	do_calibration(colorCM, colorDC, colorR, colorT, irCM, irDC, irR, irT, R, T);
+
+	Mat colorRaw = imread("calib/color_0.png");
+	Mat irRaw = imread("calib/ir_0.png");
+	Mat color, ir;
+
+	undistort(colorRaw, color, colorCM, colorDC);
+	undistort(irRaw, ir, irCM, irDC);
 
 	Mat crender = color.clone();
 	Mat irender = ir.clone();
@@ -154,8 +164,12 @@ int do_main3() {
 			char cbuffer[128];
 			sprintf_s(cbuffer, "calib/color_%d.png", index);
 
-			ir = imread(ibuffer);
-			color = imread(cbuffer);
+			irRaw = imread(ibuffer);
+			colorRaw = imread(cbuffer);
+
+			undistort(colorRaw, color, colorCM, colorDC);
+			undistort(irRaw, ir, irCM, irDC);
+
 			irender = ir.clone();
 			crender = color.clone();
 		}

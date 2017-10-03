@@ -107,11 +107,11 @@ void do_calibration(Mat &colorCameraMatrix, Mat &colorDistCoeffs, Mat &colorR, M
 	// irCameraMatrix, irDistCoeffs
 	// colorCameraMatrix, colorDistCoeffs
 	// R, T, E, F
-	std::cout << "Begin stereo calibrate" << std::endl;
-	stereoCalibrate(irOp, irIp, colorIp, irCameraMatrix, irDistCoeffs, colorCameraMatrix, colorDistCoeffs, Size(IMAGE_WIDTH, IMAGE_HEIGHT), dR, dT, E, F);
+	// std::cout << "Begin stereo calibrate" << std::endl;
+	// stereoCalibrate(irOp, irIp, colorIp, irCameraMatrix, irDistCoeffs, colorCameraMatrix, colorDistCoeffs, Size(IMAGE_WIDTH, IMAGE_HEIGHT), dR, dT, E, F);
 
-	R = dR;
-	T = dT;
+	// R = dR;
+	// T = dT;
 
 	// colorR = colorRVecs[0];
 	Rodrigues(colorRVecs[0], colorR);
