@@ -41,11 +41,11 @@ int main()
 }
 
 int do_main3() {
-	Mat color0 = imread("calib/color_0.png");
-	Mat ir0 = imread("calib/ir_0.png");
+	Mat color = imread("calib/color_0.png");
+	Mat ir = imread("calib/ir_0.png");
 
-	Mat crender = color0.clone();
-	Mat irender = ir0.clone();
+	Mat crender = color.clone();
+	Mat irender = ir.clone();
 
 	namedWindow("color", WINDOW_AUTOSIZE);
 	namedWindow("ir", WINDOW_AUTOSIZE);
@@ -84,13 +84,13 @@ int do_main3() {
 
 		char key = waitKey(1);
 		if (key == 13) {
-			irender = ir0.clone();
-			crender = color0.clone();
+			irender = ir.clone();
+			crender = color.clone();
 			break;
 		}
 		else if (key == ' ') {
-			irender = ir0.clone();
-			crender = color0.clone();
+			irender = ir.clone();
+			crender = color.clone();
 			irPoints.clear();
 			colorPoints.clear();
 		}
@@ -102,6 +102,7 @@ int do_main3() {
 	Mat H = findHomography(colorPoints, irPoints);
 	std::cout << "H: " << H << std::endl;
 
+	int index = 0;
 	int counter = 0;
 	while (true) {
 		if (colorMouse.eventType == CV_EVENT_LBUTTONDOWN) {
@@ -111,15 +112,15 @@ int do_main3() {
 			std::cout << "COLOR: " << lc << std::endl;
 			std::cout << "IR: " << li << std::endl;
 
-			irender = ir0.clone();
-			crender = color0.clone();
+			irender = ir.clone();
+			crender = color.clone();
 			util.renderPoint(crender, Point(lc.at<double>(0), lc.at<double>(1)), Scalar(255), 2);
 			util.renderPoint(irender, Point(li.at<double>(0), li.at<double>(1)), Scalar(0, 255), 2);
 
 			char ibuffer[128];
-			sprintf_s(ibuffer, "ir-%d.png", counter);
+			sprintf_s(ibuffer, "ir_%d_%d.png", index, counter);
 			char cbuffer[128];
-			sprintf_s(cbuffer, "color-%d.png", counter);
+			sprintf_s(cbuffer, "color_%d_%d.png", index, counter);
 
 			imwrite(ibuffer, irender);
 			imwrite(cbuffer, crender);
@@ -129,8 +130,34 @@ int do_main3() {
 		imshow("ir", irender);
 		imshow("color", crender);
 
-		if (waitKey(1) == 13) {
+		char key = waitKey(1);
+		bool indexUpdated = false;
+		if (key == 13) {
 			break;
+		}
+		else if (key == 'a') {
+			if (index > 0) {
+				index--;
+				indexUpdated = true;
+			}
+		}
+		else if (key == 'd') {
+			if (index < IMAGE_COUNT - 1) {
+				index++;
+				indexUpdated = true;
+			}
+		}
+		
+		if (indexUpdated) {
+			char ibuffer[128];
+			sprintf_s(ibuffer, "calib/ir_%d.png", index);
+			char cbuffer[128];
+			sprintf_s(cbuffer, "calib/color_%d.png", index);
+
+			ir = imread(ibuffer);
+			color = imread(cbuffer);
+			irender = ir.clone();
+			crender = color.clone();
 		}
 	}
 
