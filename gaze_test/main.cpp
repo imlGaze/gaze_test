@@ -29,6 +29,7 @@ void mouseCallback(int eventType, int x, int y, int flags, void *userData) {
 
 int do_main();
 int do_main2();
+int do_main3();
 
 int main()
 {
@@ -36,8 +37,108 @@ int main()
 	// return do_calibration();
 	// do_main();
 
-	return do_main2();
+	return do_main3();
 }
+
+int do_main3() {
+	Mat color0 = imread("calib/color_0.png");
+	Mat ir0 = imread("calib/ir_0.png");
+
+	Mat crender = color0.clone();
+	Mat irender = ir0.clone();
+
+	namedWindow("color", WINDOW_AUTOSIZE);
+	namedWindow("ir", WINDOW_AUTOSIZE);
+
+	Mouse irMouse, colorMouse;
+	setMouseCallback("ir", mouseCallback, &irMouse);
+	setMouseCallback("color", mouseCallback, &colorMouse);
+
+	ProcessUtil util;
+	util.initialize();
+
+	bool active = false;
+	vector<Point> colorPoints, irPoints;
+	while (true) {
+		if (active) {
+			if (irMouse.eventType == CV_EVENT_LBUTTONDOWN) {
+				Point ip = Point(irMouse.x, irMouse.y);
+				irPoints.push_back(ip);
+				std::cout << "IR: " << ip << std::endl;
+				active = false;
+			}
+
+			if (colorMouse.eventType == CV_EVENT_LBUTTONDOWN) {
+				Point cp = Point(colorMouse.x, colorMouse.y);
+				colorPoints.push_back(cp);
+				std::cout << "COLOR: " << cp << std::endl;
+				active = false;
+			}
+		}
+
+		util.renderPoints(irender, irPoints, Scalar(0, 255), 2);
+		util.renderPoints(crender, colorPoints, Scalar(255), 2);
+
+		imshow("ir", irender);
+		imshow("color", crender);
+
+		char key = waitKey(1);
+		if (key == 13) {
+			irender = ir0.clone();
+			crender = color0.clone();
+			break;
+		}
+		else if (key == ' ') {
+			irender = ir0.clone();
+			crender = color0.clone();
+			irPoints.clear();
+			colorPoints.clear();
+		}
+		else if (key == 'a') {
+			active = true;
+		}
+	}
+	
+	Mat H = findHomography(colorPoints, irPoints);
+	std::cout << "H: " << H << std::endl;
+
+	int counter = 0;
+	while (true) {
+		if (colorMouse.eventType == CV_EVENT_LBUTTONDOWN) {
+			Mat lc = (Mat_<double>(3, 1) << colorMouse.x, colorMouse.y, 1);
+			Mat li = H * lc;
+
+			std::cout << "COLOR: " << lc << std::endl;
+			std::cout << "IR: " << li << std::endl;
+
+			irender = ir0.clone();
+			crender = color0.clone();
+			util.renderPoint(crender, Point(lc.at<double>(0), lc.at<double>(1)), Scalar(255), 2);
+			util.renderPoint(irender, Point(li.at<double>(0), li.at<double>(1)), Scalar(0, 255), 2);
+
+			char ibuffer[128];
+			sprintf_s(ibuffer, "ir-%d.png", counter);
+			char cbuffer[128];
+			sprintf_s(cbuffer, "color-%d.png", counter);
+
+			imwrite(ibuffer, irender);
+			imwrite(cbuffer, crender);
+			counter++;
+		}
+
+		imshow("ir", irender);
+		imshow("color", crender);
+
+		if (waitKey(1) == 13) {
+			break;
+		}
+	}
+
+	
+
+	return 0;
+}
+
 
 int do_main2() {
 	Mat colorCM, irCM;
@@ -75,6 +176,8 @@ int do_main2() {
 	Mat io = irCM * irRT * origin;
 	std::cout << "ColorOrg: " << co << std::endl;
 	std::cout << "IROrg: " << io << std::endl;
+	std::cout << "ColorOrg(/z): " << co / co.at<double>(2) << std::endl;
+	std::cout << "IROrg(/z): " << io / io.at<double>(2) << std::endl;
 
 	Mat p1 = (Mat_<double>(4, 1) << 1, 0, 0, 1);
 	Mat cop1 = colorCM * colorRT * p1;
