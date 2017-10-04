@@ -1,4 +1,10 @@
 #include"RealSenseAPI.h"
+#include <RealSense/Session.h>
+#include <RealSense/SenseManager.h>
+#include <RealSense/SampleReader.h>
+#include <RealSense/Face/FaceModule.h>
+#include <RealSense/Face/FaceData.h>
+#include <RealSense/Face/FaceConfiguration.h>
 #include<opencv2\opencv.hpp>
 #include<iostream>
 
@@ -11,6 +17,7 @@ bool RealSenseAPI::initialize()
 	senseManager = SenseManager::CreateInstance();
 	senseManager->EnableStream(Capture::STREAM_TYPE_IR, 640, 480, 30);
 	senseManager->EnableStream(Capture::STREAM_TYPE_COLOR, 640, 480, 30);
+	senseManager->EnableFace();
 	senseManager->Init();
 
 	device = senseManager->QueryCaptureManager()->QueryDevice();
@@ -19,18 +26,20 @@ bool RealSenseAPI::initialize()
 		device->ResetProperties(Capture::STREAM_TYPE_ANY);
 		device->SetMirrorMode(Capture::Device::MirrorMode::MIRROR_MODE_DISABLED);
 		device->SetIVCAMLaserPower(1);
+
+		fmod = senseManager->QueryFace();
+		fdata = fmod->CreateOutput();
+		fconfig = fmod->CreateActiveConfiguration();
+		fconfig->detection.isEnabled = true;
+		fconfig->detection.maxTrackedFaces = 3; // TODO: 1?
+		fconfig->landmarks.isEnabled = true;
+		landmarkPoints = new Face::FaceData::LandmarkPoint[fconfig->landmarks.numLandmarks];
+		fconfig->ApplyChanges();
+
 		return true;
 	}
 
-	return false;
-}
 
-bool RealSenseAPI::setLaserPower(int val) {
-	if (device != nullptr && 0 <= val && val <= 16) {
-		device->SetIVCAMLaserPower(val);
-		return true;
-	}
-	
 	return false;
 }
 
@@ -104,5 +113,41 @@ bool RealSenseAPI::queryColorImage(Mat &colorColor, Mat &colorGray, Mat &colorBi
 	colorBuffer8UC1 = ~colorBuffer8UC1;
 	threshold(colorBuffer8UC1, colorBinary, thresh, 255, CV_THRESH_BINARY);
 	return true;
+}
+
+// https://communities.intel.com/thread/111745
+bool RealSenseAPI::queryFace(std::vector<cv::Point> &landmarks) {
+	status = senseManager->AcquireFrame(true);
+	if (status >= Status::STATUS_NO_ERROR) {
+		fdata->Update();
+
+		for (int i = 0, n = fdata->QueryNumberOfDetectedFaces(); i < n; i++) {
+			Face::FaceData::Face *face = fdata->QueryFaceByIndex(i);
+
+			if (face) {
+				Face::FaceData::LandmarksData *lmdata = face->QueryLandmarks();
+				if (lmdata) {
+					int numPoints = lmdata->QueryNumPoints();
+					if (numPoints == fconfig->landmarks.numLandmarks) {
+						lmdata->QueryPoints(landmarkPoints);
+
+						for (int j = 0; j < numPoints; j++) {
+							if (landmarkPoints->confidenceImage) {
+								if (Face::FaceData::LandmarkType::LANDMARK_EYE_RIGHT_CENTER <= landmarkPoints[j].source.alias && landmarkPoints[j].source.alias <= Face::FaceData::LandmarkType::LANDMARK_EYEBROW_LEFT_LEFT) {
+									landmarks.push_back(Point(landmarkPoints[j].image.x, landmarkPoints[j].image.y));
+								}
+							}
+						}
+
+						senseManager->ReleaseFrame();
+						return true;
+					}
+				}
+			}
+		}
+	}
+
+	senseManager->ReleaseFrame();
+	return false;
 }
 

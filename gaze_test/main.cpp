@@ -5,12 +5,14 @@
 #include"RealSenseAPI.h"
 #include"ProcessUtil.h"
 #include<vector>
+#include<chrono>
 
 #include "const.h"
 #include "photo.h"
 #include "calibration.h"
 
 using namespace cv;
+using namespace std::chrono;
 using std::vector;
 
 struct Mouse {
@@ -30,6 +32,7 @@ void mouseCallback(int eventType, int x, int y, int flags, void *userData) {
 int do_main();
 int do_main2();
 int do_main3();
+int do_main4();
 
 int main()
 {
@@ -37,7 +40,57 @@ int main()
 	// return do_calibration();
 	// do_main();
 
-	return do_main3();
+	return do_main4();
+}
+
+nanoseconds prev;
+
+int do_main4() {
+	RealSenseAPI realSense;
+	if (!realSense.initialize()) {
+		std::cout << "ERROR: No device was found" << std::endl;
+	}
+
+	Mat colorColor(480, 640, CV_8UC3);
+	Mat irGray(480, 640, CV_8UC3);
+	namedWindow("colorColor", CV_WINDOW_AUTOSIZE);
+
+	ProcessUtil util;
+	util.initialize();
+
+	while (true) {
+		if (!realSense.queryColorImage(colorColor, Mat(), Mat(), 100)) {
+			continue;
+		}
+		if (!realSense.queryIRImage(irGray, Mat(), 100)) {
+			continue;
+		}
+
+		vector<Point> landmarks;
+		nanoseconds now;
+		now = duration_cast<nanoseconds>(
+			system_clock::now().time_since_epoch()
+			);
+		std::cout << 1000.0 / ((now - prev).count() / 1000.0 / 1000.0) << std::endl; // FPS
+		prev = now;
+
+		if (realSense.queryFace(landmarks)) {
+			Rect rect = boundingRect(landmarks);
+			rectangle(colorColor, rect, Scalar(255), 2);
+
+			util.renderPoints(colorColor, landmarks, Scalar(0, 255), 2);
+			std::cout << "Found" << std::endl;
+		}
+
+		imshow("colorColor", colorColor);
+
+		char key = waitKey(1);
+		if (key == 'q') {
+			break;
+		}
+	}
+
+	return 0;
 }
 
 int do_main3() {
